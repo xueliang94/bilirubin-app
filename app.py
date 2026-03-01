@@ -1,80 +1,90 @@
 import streamlit as st
-import numpy as np
+
+st.set_page_config(page_title="Neonatal Bilirubin Calculator", layout="centered")
 
 st.title("Neonatal Bilirubin Calculator (30–38 weeks)")
 
-# --------------------------
-# DATA
-# --------------------------
+# ----------------------------
+# DATA SECTION
+# ----------------------------
 
-hours_preterm = np.array([6,12,24,48,72,96])
-hours_term = np.array([6,12,24,48,72,96,120])
-
-preterm_data = {
-    30: {"PT":[50,65,95,145,200,200],"ET":[100,115,150,220,290,290]},
-    31: {"PT":[50,70,100,155,210,210],"ET":[100,120,155,230,310,310]},
-    32: {"PT":[50,70,100,160,220,220],"ET":[100,120,160,240,320,320]},
-    33: {"PT":[50,70,100,170,230,230],"ET":[100,120,160,245,330,330]},
-    34: {"PT":[50,70,110,170,240,240],"ET":[100,120,170,250,340,340]},
+# 30–34 weeks (NO neurotoxicity, up to 96h)
+data_30_34 = {
+    30: {6: (50,100), 12:(65,115), 24:(95,150), 48:(145,220), 72:(200,300), 96:(200,300)},
+    31: {6:(50,100),12:(70,120),24:(100,155),48:(155,230),72:(210,310),96:(210,310)},
+    32: {6:(50,100),12:(70,120),24:(100,160),48:(160,240),72:(220,320),96:(220,320)},
+    33: {6:(50,100),12:(70,120),24:(100,160),48:(170,245),72:(230,330),96:(230,330)},
+    34: {6:(50,100),12:(70,120),24:(110,170),48:(170,250),72:(240,340),96:(240,340)}
 }
 
-term_data = {
-    35: {"PT":[58,94,130,191,236,267,268],"ET":[266,280,306,354,391,419,422]},
-    36: {"PT":[84,103,140,202,248,279,280],"ET":[285,299,327,374,412,436,439]},
-    37: {"PT":[94,113,149,212,258,291,294],"ET":[304,320,347,395,431,455,456]},
-    38: {"PT":[101,121,159,222,270,303,306],"ET":[321,337,366,410,443,462,462]},
+# 35–38 weeks STANDARD (up to 120h)
+data_35_38_standard = {
+    35:{6:(48,236),12:(67,250),24:(101,275),48:(157,316),72:(198,344),96:(224,361),120:(227,364)},
+    36:{6:(56,246),12:(75,260),24:(109,284),48:(167,327),72:(212,357),96:(239,378),120:(241,381)},
+    37:{6:(67,256),12:(85,268),24:(120,294),48:(180,337),72:(224,371),96:(255,393),120:(256,397)},
+    38:{6:(74,265),12:(94,279),24:(128,303),48:(188,344),72:(232,378),96:(259,402),120:(260,402)}
 }
 
-# --------------------------
-# INPUT
-# --------------------------
+# 35–38 weeks NEUROTOXICITY
+data_35_38_neuro = {
+    35:{6:(48,236),12:(67,250),24:(101,275),48:(157,316),72:(198,344),96:(224,361),120:(227,364)},
+    36:{6:(56,246),12:(75,260),24:(109,284),48:(167,327),72:(212,357),96:(239,378),120:(241,381)},
+    37:{6:(67,256),12:(85,268),24:(120,294),48:(180,337),72:(224,371),96:(255,393),120:(256,397)},
+    38:{6:(74,265),12:(94,279),24:(128,303),48:(188,344),72:(232,378),96:(259,402),120:(260,402)}
+}
 
-ga = st.selectbox("Gestation (weeks)", [30,31,32,33,34,35,36,37,38], key="ga")
-hour = st.number_input("Hour of life", 6, 120, key="hour")
-tsb = st.number_input("Current TSB (µmol/L)", key="tsb")
-prev = st.number_input("Previous TSB (µmol/L)", key="prev")
-delta = st.number_input("Hours between samples", key="delta")
+# ----------------------------
+# INPUT SECTION
+# ----------------------------
 
-# --------------------------
-# CALCULATION
-# --------------------------
+ga = st.selectbox("Gestation (weeks)", [30,31,32,33,34,35,36,37,38])
 
 if ga <= 34:
-    hour_use = min(hour, 96)
-    pt = np.interp(hour_use, hours_preterm, preterm_data[ga]["PT"])
-    et = np.interp(hour_use, hours_preterm, preterm_data[ga]["ET"])
+    hour_options = [6,12,24,48,72,96]
 else:
-    pt = np.interp(hour, hours_term, term_data[ga]["PT"])
-    et = np.interp(hour, hours_term, term_data[ga]["ET"])
+    hour_options = [6,12,24,48,72,96,120]
 
-intensive = pt + 51
+hour = st.selectbox("Hour of life", hour_options)
 
-if tsb >= et:
-    decision = "EXCHANGE TRANSFUSION"
-elif tsb >= intensive:
-    decision = "INTENSIVE PHOTOTHERAPY"
-elif tsb >= pt:
-    decision = "CONVENTIONAL PHOTOTHERAPY"
+if ga >= 35:
+    neuro = st.checkbox("Neurotoxicity risk present?")
 else:
-    decision = "OBSERVE"
+    neuro = False
 
-if delta > 0:
-    rate = (tsb - prev) / delta
+current_tsb = st.number_input("Current TSB (µmol/L)", min_value=0.0)
+
+# ----------------------------
+# CALCULATION SECTION
+# ----------------------------
+
+if ga <= 34:
+    pt, et = data_30_34[ga][hour]
 else:
-    rate = 0
+    if neuro:
+        pt, et = data_35_38_neuro[ga][hour]
+    else:
+        pt, et = data_35_38_standard[ga][hour]
 
-# --------------------------
-# OUTPUT
-# --------------------------
+intensive_pt = pt + 51
+
+# ----------------------------
+# RESULTS
+# ----------------------------
 
 st.subheader("Results")
 
-st.write("PT Threshold:", round(pt,1))
-st.write("Intensive PT Threshold:", round(intensive,1))
-st.write("ET Threshold:", round(et,1))
-st.write("Decision:", decision)
+st.write(f"PT Threshold: {pt} µmol/L")
+st.write(f"Intensive PT Threshold: {intensive_pt} µmol/L")
+st.write(f"ET Threshold: {et} µmol/L")
 
-if delta > 0:
-    st.write("Rate of Rise:", round(rate,2), "µmol/L/hr")
-    if rate > 8.5:
-        st.warning("⚠ High Risk: Rate > 8.5 µmol/L/hr")
+# Decision logic
+if current_tsb >= et:
+    decision = "Exchange Transfusion"
+elif current_tsb >= intensive_pt:
+    decision = "Intensive Phototherapy"
+elif current_tsb >= pt:
+    decision = "Conventional Phototherapy"
+else:
+    decision = "No Phototherapy"
+
+st.success(f"Decision: {decision}")

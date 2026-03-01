@@ -3,6 +3,8 @@ import streamlit as st
 st.set_page_config(page_title="Neonatal Bilirubin Calculator", layout="centered")
 
 st.title("Neonatal Bilirubin Calculator (35–38 weeks)")
+Developed by Dr. Teo Xue Liang
+Based on Malaysian Paediatric Protocol 5th Edition
 
 # --------------------------------------------------
 # Official Time Points (hours)

@@ -5,7 +5,7 @@ st.set_page_config(page_title="Neonatal Bilirubin Calculator", layout="centered"
 st.title("Neonatal Bilirubin Calculator (35–38 weeks)")
 st.markdown("""
 **Developed by Dr. Teo Xue Liang**  
-Clinical development support by OpenAI ChatGPT  
+Version 1.0 - 2026 
 Based on Paediatric Protocol 5th Edition
 """)
 
